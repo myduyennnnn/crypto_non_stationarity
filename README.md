@@ -128,8 +128,59 @@ Thực hiện trong `01_preprocessing_supabase.ipynb`, gồm 2 phần, 18 bướ
 - Cả hai chỉ tồn tại trong memory của notebook, không ghi lại lên Supabase, không xuất CSV.
 
 ---
+Dưới đây là phần nội dung tiếp nối mục 4 được biên soạn lại **ngắn gọn, mạch lạc và chuẩn hóa kỹ thuật**, liên kết trực tiếp với đầu ra (`ftt_processed`, `sp500_processed`) từ khâu tiền xử lý:
 
-## 5. Yêu cầu môi trường
+---
+## 5. Trực quan hóa dữ liệu (`02_visualization.ipynb`)
+
+Sử dụng trực tiếp `ftt_processed` và `sp500_processed` sau bước tiền xử lý để trực quan hóa dữ liệu, phân tích biến động giá và quan sát phản ứng của thị trường quanh sự kiện FTX.
+
+### 5.1. Thiết lập khoảng thời gian sự kiện
+
+Xác định ba khoảng thời gian chính:
+
+* **Cửa sổ sự kiện (`EVENT_WINDOW`):** `02/11/2022 – 11/11/2022`, từ thời điểm thông tin bị rò rỉ đến khi FTX nộp đơn phá sản.
+* **Mốc sự kiện chính (`EVENT_DATE`):** `08/11/2022`, thời điểm FTX dừng cho khách hàng rút tiền.
+* **Cửa sổ quan sát (`VIEW_WINDOW`):** `01/10/2022 – 31/12/2022`, dùng để quan sát diễn biến trước và sau sự kiện.
+
+### 5.2. Phân tích giá đóng cửa
+
+Vẽ biểu đồ giá đóng cửa của FTT và S&P 500 trong giai đoạn 2021–2024. Cửa sổ sự kiện được đánh dấu trên biểu đồ để dễ quan sát sự thay đổi bất thường của giá và khả năng xuất hiện **điểm gãy cấu trúc (Structural Break)**.
+
+### 5.3. Phân tích Log Return
+
+Vẽ Log Return hàng ngày của FTT và S&P 500 cùng đường tham chiếu `y = 0`. Qua biểu đồ, quan sát mức độ biến động của lợi suất, đặc biệt là các giai đoạn biến động mạnh và hiện tượng **cụm biến động (Volatility Clustering)**.
+
+### 5.4. Thống kê mô tả và phân phối
+
+Tính các chỉ số thống kê gồm `n`, `mean`, `std`, `skew`, `kurtosis`, `min` và `max` bằng hàm `describe_return`. Đồng thời, sử dụng Histogram với `bins=80` để quan sát hình dạng phân phối và kiểm tra hiện tượng **đuôi dày (Fat Tails)**.
+
+### 5.5. Phóng to cửa sổ sự kiện
+
+Lọc dữ liệu FTT trong khoảng `01/10/2022 – 31/12/2022` và vẽ chi tiết giá đóng cửa cùng Log Return. Mốc `08/11/2022` được đánh dấu trên biểu đồ để dễ quan sát sự thay đổi của giá và biến động sau sự kiện.
+
+---
+
+## 6. Kiểm định tính dừng: ACF & ADF Test (`03_acf_adf_test.ipynb`)
+
+Thực hiện kiểm định tính dừng của chuỗi thời gian và xác định bậc tích hợp $I(d)$ của dữ liệu.
+
+### 6.1. Kiểm định tự tương quan ACF
+
+Sử dụng `plot_acf` với `lags=40` trên giá đóng cửa và Log Return của FTT và S&P 500. Kết quả ACF được dùng để quan sát mức độ phụ thuộc của giá trị hiện tại vào các giá trị trong quá khứ và đánh giá dấu hiệu của chuỗi dừng hoặc không dừng.
+
+### 6.2. Kiểm định nghiệm đơn vị ADF
+
+Sử dụng hàm `adf_test` với `adfuller(..., autolag="AIC")` để kiểm định tính dừng của chuỗi. Kết quả được đánh giá dựa trên thống kê ADF, các giá trị tới hạn và `p-value` với mức ý nghĩa $\alpha = 0.05$.
+
+* $H_0$: Chuỗi có nghiệm đơn vị, không dừng.
+* $H_1$: Chuỗi không có nghiệm đơn vị, dừng.
+
+### 6.3. Kiểm định ADF theo từng giai đoạn
+
+Đối với FTT, dữ liệu được chia thành hai giai đoạn quanh ngày `08/11/2022`: trước sự kiện (`trade_date < 2022-11-08`) và từ ngày sự kiện trở đi (`trade_date >= 2022-11-08`). Sau đó, thực hiện ADF riêng cho từng giai đoạn và tính độ lệch chuẩn (`std`) để đánh giá tính dừng của Log Return và sự thay đổi mức độ biến động trước và sau sự kiện.
+
+## 7. Yêu cầu môi trường
 
 Cần file `.env` ở thư mục gốc project với:
 
@@ -140,10 +191,11 @@ SUPABASE_PUBLISHABLE_KEY=...
 
 ---
 
-## 6. Cấu trúc project
+## 8. Cấu trúc project
+
 
 ```text
-01_preprocessing_supabase.ipynb   # Notebook preprocessing chính thức (theo quy trình ở mục 4)
+01_preprocessing_supabase.ipynb   # Kiểm tra và tiền xử lý dữ liệu từ Supabase
+02_visualization.ipynb            # Trực quan hóa dữ liệu và phân tích giai đoạn FTX
+03_acf_adf_test.ipynb              # Phân tích ACF và kiểm định ADF
 ```
-
-> Lưu ý: notebook preprocessing chỉ dừng ở việc tạo `ftt_processed` / `sp500_processed`. Việc trực quan hóa, ACF/ADF, rolling volatility, event study và merge dữ liệu để so sánh (nếu cần) được thực hiện ở (các) notebook phân tích tiếp theo, không nằm trong phạm vi file này.
