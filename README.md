@@ -229,7 +229,7 @@ crypto_non_stationarity/
 │   └── 03_acf_adf.ipynb         # Phân tích ACF và kiểm định ADF
 ├── src/
 │   └── download_data.py         # Tải FTT (Yahoo Finance) & S&P 500 (FRED/Yahoo) và upload lên Supabase
-├── .env                         # SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY (không commit)
+├── .env                         # SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
 ├── .gitignore
 └── README.md
 ```
